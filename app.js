@@ -20,23 +20,15 @@ const getAllUsers = (request, response) => {
 };
 
 const signUpUser = async (request, response) => {
-  const id = uuidv4();
+  const id = uuidv4(); //giving unique id to user
   const textPassword = request.body.password;
   // Hashing user's password
   try {
     const hashedPassword = await bcrypt.hash(textPassword, 10);
-    const newUser = Object.assign(
-      { _id: id },
-      {
-        name: request.body.name,
-        email: request.body.email,
-        role: request.body.role,
-        active: request.body.active,
-        photo: request.body.photo,
-        password: hashedPassword,
-      }
-    );
-    users.push(newUser);
+    const newUser = Object.assign({ _id: id }, request.body, {
+      password: hashedPassword,
+    });
+    users.push(newUser); //adding newUser to users array
     fs.writeFile(filePath, JSON.stringify(users), (err) => {
       response.status(201).json({
         status: "success",
@@ -54,8 +46,10 @@ const signUpUser = async (request, response) => {
 };
 
 const loginUser = async (request, response) => {
-  const { email, password } = request.body;
+  const { email, password } = request.body; //Object destructuring
   const user = users.find((user) => user.email === email);
+
+//   if user is undefined,
   if (!user) {
     response.status(400).json({
       status: "fail",
@@ -97,7 +91,7 @@ const updateUserInfo = async (request, response) => {
     });
   } else {
     const isPasswordValid = await bcrypt.compare(
-      password,
+      password, 
       userToUpdate.password
     );
     if (isPasswordValid) {
