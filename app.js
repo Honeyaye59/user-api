@@ -20,27 +20,37 @@ const getAllUsers = (request, response) => {
 };
 
 const signUpUser = async (request, response) => {
-  const id = uuidv4(); //giving unique id to user
-  const textPassword = request.body.password;
-  // Hashing user's password
-  try {
-    const hashedPassword = await bcrypt.hash(textPassword, 10);
-    const newUser = Object.assign({ _id: id }, request.body, {
-      password: hashedPassword,
-    });
-    users.push(newUser); //adding newUser to users array
-    fs.writeFile(filePath, JSON.stringify(users), (err) => {
-      response.status(201).json({
-        status: "success",
-        data: {
-          user: newUser,
-        },
+  const user = users.find((user) => user.email === request.body.email);
+  //only if user is undefined,
+  if (!user) {
+    const id = uuidv4(); //giving unique id to user
+    const textPassword = request.body.password;
+    // Hashing user's password
+    try {
+      const hashedPassword = await bcrypt.hash(textPassword, 10);
+      const newUser = Object.assign({ _id: id }, request.body, {
+        password: hashedPassword,
       });
-    });
-  } catch (err) {
-    response.status(500).json({
+      users.push(newUser); //adding newUser to users array
+      fs.writeFile(filePath, JSON.stringify(users), (err) => {
+        response.status(201).json({
+          status: "success",
+          data: {
+            user: newUser,
+          },
+        });
+      });
+    } catch (err) {
+      response.status(500).json({
+        status: "fail",
+        message: "Internal Server Error",
+      });
+    }
+    // if user email exits already in database
+  } else {
+    response.status(409).json({
       status: "fail",
-      message: "Internal Server Error",
+      message: "Email address already registered",
     });
   }
 };
@@ -49,7 +59,7 @@ const loginUser = async (request, response) => {
   const { email, password } = request.body; //Object destructuring
   const user = users.find((user) => user.email === email);
 
-//   if user is undefined,
+  //   if user is undefined,
   if (!user) {
     response.status(400).json({
       status: "fail",
@@ -91,7 +101,7 @@ const updateUserInfo = async (request, response) => {
     });
   } else {
     const isPasswordValid = await bcrypt.compare(
-      password, 
+      password,
       userToUpdate.password
     );
     if (isPasswordValid) {
